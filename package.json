@@ -6,14 +6,14 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/davidgljay/nametag_func.git"
-  },
+  "repository": "git+https://github.com/davidgljay/nametag_func.git",
   "author": "David Jay",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/davidgljay/nametag_func/issues"
   },
-  "homepage": "https://github.com/davidgljay/nametag_func#readme"
+  "homepage": "https://github.com/davidgljay/nametag_func#readme",
+  "dependencies": {
+    "openpgp": "^5.5.0"
+  }
 }
