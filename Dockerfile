@@ -1,4 +1,4 @@
 FROM python
 VOLUME /bin/nametag/keystore
-COPY * /bin/nametag
+COPY *.py /bin/nametag
 WORKDIR /bin/nametag
