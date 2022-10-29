@@ -1,4 +1,4 @@
-const nametag = require('../nametag')
+const Nametag = require('../nametag')
 const openpgp = require('openpgp')
 
 describe('Generating a certificate', () => {
@@ -23,7 +23,7 @@ describe('Generating a certificate', () => {
         return Promise.all([
           openpgp.createMessage({text: JSON.stringify(body)}),
           openpgp.readKey({ armoredKey: granterKeys.publicKey }),
-          openpgp.readKey({ armoredKey: granteeKeys.privateKey })
+          openpgp.readKey({ armoredKey: granterKeys.privateKey })
         ])
       })
     .then(([message, encryptionKeys, signingKeys]) => openpgp.encrypt({
@@ -36,8 +36,31 @@ describe('Generating a certificate', () => {
      })
   })
 
-  test('should validate JSON', () => {
+  test('should decrypt and validate a message', () => {
     expect(encryptedRequest).toBeDefined()
+    return Nametag.decryptAndVerify(encryptedRequest, granterKeys.publicKey, granterKeys.privateKey)
+      .then(({data, signatures}) => {
+        expect(data).toBe(JSON.stringify(body))
+        expect(signatures).toBeDefined()
+        console.log(signatures)
+      })
+  })
+
+  test('should raise an error if unsigned', () => {
+
+  })
+
+  test('should raise an error if it fails to decrypt', () => {
+
+  })
+
+  test('should generate a keypair', () => {
+      // return openpgp.generateKey({userIDs: []}).then(keypair => expect(keypair).toBeDefined())
+
+  })
+
+  test('should generate a hash of the image in a suggested URL', () => {
+
   })
 
 })
