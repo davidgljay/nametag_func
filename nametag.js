@@ -18,6 +18,8 @@ class Nametag {
     })
   }
 
+  static generateKeys = userIDs => openpgp.generateKey({userIDs})
+
 }
 
 module.exports = Nametag
