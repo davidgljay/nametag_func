@@ -4,7 +4,7 @@
   "description": "Keystore which implements basic functions of the nametag protocol.",
   "main": "func.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "repository": "git+https://github.com/davidgljay/nametag_func.git",
   "author": "David Jay",
@@ -15,5 +15,8 @@
   "homepage": "https://github.com/davidgljay/nametag_func#readme",
   "dependencies": {
     "openpgp": "^5.5.0"
+  },
+  "devDependencies": {
+    "jest": "^29.2.2"
   }
 }
