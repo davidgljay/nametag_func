@@ -3,6 +3,8 @@ const openpgp = require('openpgp')
 
 describe('Generating a certificate', () => {
 
+
+
   const body = {
     text: "Description of the certification.",
     image: "url of an image to be associated with this certification",
@@ -42,25 +44,30 @@ describe('Generating a certificate', () => {
       .then(({data, signatures}) => {
         expect(data).toBe(JSON.stringify(body))
         expect(signatures).toBeDefined()
-        console.log(signatures)
       })
   })
 
-  test('should raise an error if unsigned', () => {
-
+  test('should raise an error if not signed correctly', () => {
+    //return expect(Nametag.decryptAndVerify(encryptedRequest, granteeKeys.publicKey, granterKeys.privateKey))
   })
 
   test('should raise an error if it fails to decrypt', () => {
-
+    //return expect(Nametag.decryptAndVerify(encryptedRequest, granterKeys.publicKey, granteeKeys.privateKey))
   })
 
   test('should generate a keypair', () => {
-      // return openpgp.generateKey({userIDs: []}).then(keypair => expect(keypair).toBeDefined())
-
+      return  Nametag.generateKeys([{ name: 'Jon Smith', email: 'jon@example.com' }])
+        .then(keys => {
+          expect(keys.privateKey).toBeDefined()
+          expect(keys.publicKey).toBeDefined()
+          expect(keys.revocationCertificate).toBeDefined()
+        })
   })
 
   test('should generate a hash of the image in a suggested URL', () => {
-
+    const url = 'https://relationalitylab.org/img/dj-headshot.png'
+    return Nametag.getURLHash(url)
+      .then(hash => expect(hash).toBe('fc3ff00fe007c007c011cfd11fe01ff009700df08ff187f180e1c1e3e0c7f81f'))
   })
 
 })

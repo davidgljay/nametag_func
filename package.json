@@ -3,8 +3,9 @@
   "version": "0.0.1",
   "description": "Keystore which implements basic functions of the nametag protocol.",
   "main": "func.js",
+  "type": "module",
   "scripts": {
-    "test": "jest"
+    "test": "jest --watch"
   },
   "repository": "git+https://github.com/davidgljay/nametag_func.git",
   "author": "David Jay",
@@ -14,9 +15,11 @@
   },
   "homepage": "https://github.com/davidgljay/nametag_func#readme",
   "dependencies": {
+    "image-hash": "^5.3.1",
     "openpgp": "^5.5.0"
   },
   "devDependencies": {
+    "@babel/preset-env": "^7.19.4",
     "jest": "^29.2.2"
   }
 }

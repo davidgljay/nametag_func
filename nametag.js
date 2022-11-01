@@ -1,4 +1,5 @@
-const openpgp = require('openpgp')
+import * as openpgp from 'openpgp'
+import { imageHash } from 'image-hash'
 
 class Nametag {
 
@@ -19,6 +20,16 @@ class Nametag {
   }
 
   static generateKeys = userIDs => openpgp.generateKey({userIDs})
+
+  static getURLHash = url => new Promise(
+      (resolve, reject) => imageHash(url, 16, true, (error, data) => {
+        if (error) {
+          reject(error)
+        } else {
+          resolve(data)
+        }
+      })
+    )
 
 }
 
