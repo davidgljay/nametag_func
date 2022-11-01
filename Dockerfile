@@ -1,5 +1,5 @@
 FROM node
 VOLUME /bin/nametag/keystore
-COPY *.py /bin/nametag
+COPY * /bin/nametag
 WORKDIR /bin/nametag
-RUN pip install
+RUN yarn install
