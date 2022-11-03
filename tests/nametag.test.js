@@ -40,7 +40,7 @@ describe('Generating a certificate', () => {
 
   test('should decrypt and validate a message', () => {
     expect(encryptedRequest).toBeDefined()
-    return Nametag.decryptAndVerify(encryptedRequest, granterKeys.publicKey, granterKeys.privateKey)
+    return Nametag.decrypt(encryptedRequest, granterKeys.publicKey, granterKeys.privateKey)
       .then(({data, signatures}) => {
         expect(data).toBe(JSON.stringify(body))
         expect(signatures).toBeDefined()
@@ -68,6 +68,34 @@ describe('Generating a certificate', () => {
     const url = 'https://relationalitylab.org/img/dj-headshot.png'
     return Nametag.getURLHash(url)
       .then(hash => expect(hash).toBe('fc3ff00fe007c007c011cfd11fe01ff009700df08ff187f180e1c1e3e0c7f81f'))
+  })
+
+  test('it should encrypt a message for the grantee', () => {
+
+    return Nametag.encrypt(JSON.stringify(body), granterKeys.privateKey, granteeKeys.publicKey)
+      .then(encrypted => {
+        expect(encrypted).toContain('-----BEGIN PGP MESSAGE-----')
+      })
+  })
+
+  test('it should sign a message', () => {
+    return Nametag.sign(JSON.stringify(body), granteeKeys.privateKey)
+      .then(signed => {
+        expect(signed).toContain('-----BEGIN PGP SIGNED MESSAGE-----')
+      })
+  })
+
+  test('it should verify a message', () => {
+
+    return     Promise.all([
+          openpgp.createCleartextMessage({text: JSON.stringify(body)}),
+          openpgp.readPrivateKey({ armoredKey: granteeKeys.privateKey})
+        ])
+      .then(([message, signingKeys]) => openpgp.sign({message, signingKeys}))
+      .then(signed => Nametag.verify(signed, granteeKeys.publicKey))
+      .then(result => {
+        expect(result.signatures[0]).toBeDefined()
+      })
   })
 
 })

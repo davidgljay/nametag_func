@@ -3,7 +3,7 @@ import { imageHash } from 'image-hash'
 
 class Nametag {
 
-  static decryptAndVerify = (grantRequest, signingKey, decryptionKey) => {
+  static decrypt = (grantRequest, signingKey, decryptionKey) => {
     return Promise.all([
       openpgp.readMessage({armoredMessage: grantRequest}),
       openpgp.readKey({ armoredKey: signingKey}),
@@ -18,6 +18,34 @@ class Nametag {
       })
     })
   }
+
+  static encrypt = (text, signingKey, encryptionKey) => {
+    return Promise.all([
+      openpgp.createMessage({text}),
+      openpgp.readPrivateKey({ armoredKey: signingKey}),
+      openpgp.readKey({ armoredKey: encryptionKey})
+    ])
+    .then(([message, signingKeys, encryptionKeys]) => openpgp.encrypt({
+        message,
+        encryptionKeys,
+        signingKeys
+      })
+    )
+  }
+
+  static sign = (text, signingKey) =>
+    Promise.all([
+      openpgp.createCleartextMessage({text}),
+      openpgp.readPrivateKey({ armoredKey: signingKey})
+    ])
+    .then(([message, signingKeys]) => openpgp.sign({message, signingKeys}))
+
+  static verify = (text, verificationKey) =>
+          Promise.all([
+            openpgp.readCleartextMessage({cleartextMessage: text}),
+            openpgp.readKey({ armoredKey: verificationKey})
+          ])
+      .then(([message, verificationKeys]) => openpgp.verify({message, verificationKeys}))
 
   static generateKeys = userIDs => openpgp.generateKey({userIDs})
 
