@@ -59,6 +59,37 @@ class Nametag {
       })
     )
 
+  static extract_sig_json = msg => msg.replace(/(\r\n|\n|\r)/gm, '')
+      .replace('-----BEGIN PGP SIGNED MESSAGE-----Hash: SHA512', '')
+      .replace('-----END PGP SIGNATURE-----', '')
+      .split('-----BEGIN PGP SIGNATURE-----')
+
+  static create_cert = (body, privateGranterKey, publicGranteeKey) =>
+    Promise.all([
+        body.image_url ? Nametag.getURLHash(body.image_url) : Promise.resolve('')
+    ])
+    .then((img_url_hash) => {
+      const body_hashes = {...body, img_url_hash: img_url_hash[0]}
+      return Nametag.sign(JSON.stringify(body_hashes), privateGranterKey)
+    })
+    .then(cert => Nametag.encrypt(cert, privateGranterKey, publicGranteeKey))
+
+  static approve_cert = (cert_msg, privateGranteeKey, publicGranterKey) =>
+    Nametag.decrypt(cert_msg, publicGranterKey, privateGranteeKey)
+      .then(decrypted => {
+        const [json, sig] = Nametag.extract_sig_json(decrypted.data)
+        const body_w_sig = {...JSON.parse(json), granter_sig:sig}
+        return Nametag.sign(JSON.stringify(body_w_sig), privateGranteeKey)
+      })
+      .then(approved_cert => Nametag.encrypt(approved_cert, privateGranteeKey, publicGranterKey))
+
+  static finalize_cert = (approved_cert, privateGranterKey, publicGranteeKey, publicGranterKey) =>
+    Nametag.decrypt(approved_cert, publicGranteeKey, privateGranterKey)
+      .then(decrypted => {
+        const [json, sig] = Nametag.extract_sig_json(decrypted.data)
+        return {...JSON.parse(json), grantee_sig:sig, publicGranteeKey, publicGranterKey}
+      })
+
 }
 
 module.exports = Nametag

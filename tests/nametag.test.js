@@ -3,12 +3,13 @@ const openpgp = require('openpgp')
 
 describe('Generating a certificate', () => {
 
-
-
   const body = {
-    text: "Description of the certification.",
-    image: "url of an image to be associated with this certification",
-    verified_by: ['cert1', 'cert2']
+    desc: "A headline of < 150 chars", //This is a headline for the certificate
+    text: "A detailed description of what this means and how it was verified.", //A longer description of what this certificate is and how it was verified.
+    img_url: "https://relationalitylab.org/img/dj-headshot.png", //Optionally, an image URL to be associated with this certificate.
+    data_url: "https://relationalitylab.org", //Like the image, this will be hashed for verification purposes.
+    verified_by: ['cert1', 'cert2'],
+    updates: ['cert3', 'cert4']
   }
   let granteeKeys
   let granterKeys
@@ -87,7 +88,7 @@ describe('Generating a certificate', () => {
 
   test('it should verify a message', () => {
 
-    return     Promise.all([
+    return Promise.all([
           openpgp.createCleartextMessage({text: JSON.stringify(body)}),
           openpgp.readPrivateKey({ armoredKey: granteeKeys.privateKey})
         ])
@@ -98,16 +99,79 @@ describe('Generating a certificate', () => {
       })
   })
 
+  test('it should generate a ceritificate', () => {
+    return Nametag.create_cert(body, granterKeys.privateKey, granteeKeys.publicKey)
+      .then(cert => {
+        expect(cert).toContain('-----BEGIN PGP MESSAGE-----')
+        return Promise.all([
+          openpgp.readMessage({armoredMessage: cert}),
+          openpgp.readKey({ armoredKey: granterKeys.publicKey}),
+          openpgp.readPrivateKey({ armoredKey: granteeKeys.privateKey})
+        ])
+      })
+      .then(([message, verificationKeys, decryptionKeys]) => openpgp.decrypt({
+            message,
+            decryptionKeys,
+            expectSigned: true,
+            verificationKeys // mandatory with expectSigned=true
+          })
+        )
+        .then(decrypted => Promise.all([
+              openpgp.readCleartextMessage({cleartextMessage: decrypted.data}),
+              openpgp.readKey({ armoredKey: granteeKeys.publicKey})
+            ])
+        .then(([message, verificationKeys]) => openpgp.verify({message, verificationKeys})))
+        .then(verified => {
+          const cert = JSON.parse(verified.data)
+          expect(cert.desc).toBe(body.desc)
+          expect(cert.img_url_hash).toBeDefined()
+        })
+  })
+
+  test('it should approve a certificate', () => {
+    return Nametag.create_cert(body, granterKeys.privateKey, granteeKeys.publicKey)
+      .then(cert_msg => Nametag.approve_cert(cert_msg, granteeKeys.privateKey, granterKeys.publicKey))
+      .then(approved_cert => {
+        expect(approved_cert).toContain('-----BEGIN PGP MESSAGE-----')
+        return Promise.all([
+          openpgp.readMessage({armoredMessage: approved_cert}),
+          openpgp.readKey({ armoredKey: granteeKeys.publicKey}),
+          openpgp.readPrivateKey({ armoredKey: granterKeys.privateKey})
+        ])
+      })
+      .then(([message, verificationKeys, decryptionKeys]) => openpgp.decrypt({
+            message,
+            decryptionKeys,
+            expectSigned: true,
+            verificationKeys // mandatory with expectSigned=true
+          })
+        )
+        .then(decrypted => Promise.all([
+              openpgp.readCleartextMessage({cleartextMessage: decrypted.data}),
+              openpgp.readKey({ armoredKey: granterKeys.publicKey})
+            ])
+        .then(([message, verificationKeys]) => openpgp.verify({message, verificationKeys})))
+        .then(verified => {
+          const approved_cert = JSON.parse(verified.data)
+          expect(approved_cert.desc).toBe(body.desc)
+          expect(approved_cert.granter_sig).toBeDefined()
+        })
+  })
+
+  test('it should finalize a certificate', () => {
+    return Nametag.create_cert(body, granterKeys.privateKey, granteeKeys.publicKey)
+      .then(cert_msg => Nametag.approve_cert(cert_msg, granteeKeys.privateKey, granterKeys.publicKey))
+      .then(approved_cert => Nametag.finalize_cert(approved_cert, granterKeys.privateKey, granteeKeys.publicKey, granterKeys.publicKey))
+      .then(finalized_cert => {
+        expect(finalized_cert.desc).toBe(body.desc)
+        expect(finalized_cert.text).toBe(body.text)
+        expect(finalized_cert.publicGranteeKey).toBeDefined()
+        expect(finalized_cert.publicGranterKey).toBeDefined()
+      })
+  })
+
+  test('it should verify a certificate', () => {
+
+  })
+
 })
-
-
-// 1. Receive this JSON
-// 2. Remove the sig, verify it with the sig key. Else return 400.
-// 3. Generate a keypair.
-// 4. Generate a hash of the image at the established URL.
-// 5. Sign the text and image with the granter side of the keypair (this is used to send verified messages as the granter.)
-// 6. Sign the text and image as every one of the verified keys.
-// 7. Add the image_hash, granter sig and key, and the verified URLs and sigs to the object.
-// 8. Convert the object to JSON
-// 9. Encrypt w/ the grantee key
-// 10. Return encrypted text and public granter key
